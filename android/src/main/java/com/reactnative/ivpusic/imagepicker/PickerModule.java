@@ -405,31 +405,30 @@ class PickerModule extends ReactContextBaseJavaModule implements ActivityEventLi
     }
 
     private String getBase64StringFromFile(String absoluteFilePath) {
-        InputStream inputStream;
+            try (
+                    InputStream inputStream = new FileInputStream(new File(absoluteFilePath));
+                    ByteArrayOutputStream output = new ByteArrayOutputStream()
+            ) {
+                byte[] bytes;
+                byte[] buffer = new byte[8192];
+                int bytesRead;
 
-        try {
-            inputStream = new FileInputStream(new File(absoluteFilePath));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return null;
-        }
+                try {
+                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                        output.write(buffer, 0, bytesRead);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
 
-        byte[] bytes;
-        byte[] buffer = new byte[8192];
-        int bytesRead;
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-
-        try {
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                output.write(buffer, 0, bytesRead);
+                bytes = output.toByteArray();
+                return Base64.encodeToString(bytes, Base64.NO_WRAP);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return null;
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
-        bytes = output.toByteArray();
-        return Base64.encodeToString(bytes, Base64.NO_WRAP);
-    }
+        }
 
     private String getMimeType(String url) {
         String mimeType = null;
@@ -489,7 +488,7 @@ class PickerModule extends ReactContextBaseJavaModule implements ActivityEventLi
 
         return bmp;
     }
-    
+
     private static Long getVideoDuration(String path) {
         MediaMetadataRetriever retriever = new MediaMetadataRetriever();
         retriever.setDataSource(path);
